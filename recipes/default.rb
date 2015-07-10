@@ -25,21 +25,25 @@ when 'debian'
     # Ensure we've done an apt-update first or packages won't be found.
     include_recipe 'apt'
   end
-  package 'ubuntu-cloud-keyring' do
-    options platform_options['package_overrides']
-    action :upgrade
-  end
-
-  if node['openstack']['apt']['live_updates_enabled']
-    apt_components = node['openstack']['apt']['components']
-    # Simple variable substitution for LSB codename and OpenStack release
-    apt_components.each do |comp|
-      comp.gsub! '%release%', node['openstack']['release']
-      comp.gsub! '%codename%', node['lsb']['codename']
+  
+  case node['platform']
+  when 'ubuntu'
+    package 'ubuntu-cloud-keyring' do
+      options platform_options['package_overrides']
+      action :upgrade
     end
-    apt_repository 'openstack-ppa' do
-      uri node['openstack']['apt']['uri']
-      components apt_components
+  
+    if node['openstack']['apt']['live_updates_enabled']
+      apt_components = node['openstack']['apt']['components']
+      # Simple variable substitution for LSB codename and OpenStack release
+      apt_components.each do |comp|
+        comp.gsub! '%release%', node['openstack']['release']
+        comp.gsub! '%codename%', node['lsb']['codename']
+      end
+      apt_repository 'openstack-ppa' do
+        uri node['openstack']['apt']['uri']
+        components apt_components
+      end
     end
   end
 when 'rhel'
