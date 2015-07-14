@@ -96,7 +96,7 @@ def create_db(db_name, db_prov, connection_info, db_type)
 end
 
 def create_db_user(user, user_prov, connection_info, pass)
-  @user_resource "create database user #{user}"  do
+  user_resource "create database user #{user}"  do
     provider user_prov
     connection connection_info
     username user
@@ -106,7 +106,7 @@ def create_db_user(user, user_prov, connection_info, pass)
 end
 
 def grant_db_privileges(user, user_prov, connection_info, pass, db_name)
-  @user_resource "grant database user #{user}" do
+  user_resource "grant database user #{user}" do
     provider user_prov
     connection connection_info
     username user
