@@ -111,6 +111,7 @@ def create_db_user(user, user_prov, connection_info, pass)
       password pass
       action :create
     end
+  end
 end
 
 def grant_db_privileges(user, user_prov, connection_info, pass, db_name)
