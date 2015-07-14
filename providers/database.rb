@@ -19,8 +19,8 @@ action :create do
     create_db2_user(@user, @pass, @db_name) # create user
   else
     create_db(@db_name, @db_prov, @connection_info, @db_type) # create database
-    create_db_user(@user, @user_prov, @connection_info, @pass) # create user
-    grant_db_privileges(@user, @user_prov, @connection_info, @pass, @db_name) # grant privileges
+    create_db_user(@user_resource, @user, @user_prov, @connection_info, @pass) # create user
+    grant_db_privileges(@user_resource, @user, @user_prov, @connection_info, @pass, @db_name) # grant privileges
   end
 end
 
@@ -95,7 +95,7 @@ def create_db(db_name, db_prov, connection_info, db_type)
   end
 end
 
-def create_db_user(user, user_prov, connection_info, pass)
+def create_db_user(user_resource, user, user_prov, connection_info, pass)
   user_resource "create database user #{user}"  do
     provider user_prov
     connection connection_info
@@ -105,7 +105,7 @@ def create_db_user(user, user_prov, connection_info, pass)
   end
 end
 
-def grant_db_privileges(user, user_prov, connection_info, pass, db_name)
+def grant_db_privileges(user_resource, user, user_prov, connection_info, pass, db_name)
   user_resource "grant database user #{user}" do
     provider user_prov
     connection connection_info
