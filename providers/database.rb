@@ -46,10 +46,12 @@ def db_types
   when 'postgresql', 'pgsql'
     @db_prov = ::Chef::Provider::Database::Postgresql
     @user_prov = ::Chef::Provider::Database::PostgresqlUser
+    @user_resource = ::Chef::Resource::PostgresqlDatabaseUser
     @super_user = 'postgres'
   when 'mysql', 'mariadb', 'percona-cluster', 'galera'
     @db_prov = ::Chef::Provider::Database::Mysql
     @user_prov = ::Chef::Provider::Database::MysqlUser
+    @user_resource = ::Chef::Resource::MysqlDatabaseUser
     @super_user = 'root'
   else
     fail "Unsupported database type #{@db_type}"
@@ -94,7 +96,7 @@ def create_db(db_name, db_prov, connection_info, db_type)
 end
 
 def create_db_user(user, user_prov, connection_info, pass)
-  database_user "create database user #{user}"  do
+  @user_resource "create database user #{user}"  do
     provider user_prov
     connection connection_info
     username user
@@ -104,7 +106,7 @@ def create_db_user(user, user_prov, connection_info, pass)
 end
 
 def grant_db_privileges(user, user_prov, connection_info, pass, db_name)
-  database_user "grant database user #{user}" do
+  @user_resource "grant database user #{user}" do
     provider user_prov
     connection connection_info
     username user
