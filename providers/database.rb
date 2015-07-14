@@ -19,8 +19,8 @@ action :create do
     create_db2_user(@user, @pass, @db_name) # create user
   else
     create_db(@db_name, @db_prov, @connection_info, @db_type) # create database
-    create_db_user(@user_resource, @user, @user_prov, @connection_info, @pass) # create user
-    grant_db_privileges(@user_resource, @user, @user_prov, @connection_info, @pass, @db_name) # grant privileges
+    create_db_user(@user, @user_prov, @connection_info, @pass) # create user
+    grant_db_privileges(@user, @user_prov, @connection_info, @pass, @db_name) # grant privileges
   end
 end
 
@@ -46,12 +46,10 @@ def db_types
   when 'postgresql', 'pgsql'
     @db_prov = ::Chef::Provider::Database::Postgresql
     @user_prov = ::Chef::Provider::Database::PostgresqlUser
-    @user_resource = ::Chef::Resource::PostgresqlDatabaseUser
     @super_user = 'postgres'
   when 'mysql', 'mariadb', 'percona-cluster', 'galera'
     @db_prov = ::Chef::Provider::Database::Mysql
     @user_prov = ::Chef::Provider::Database::MysqlUser
-    @user_resource = ::Chef::Resource::MysqlDatabaseUser
     @super_user = 'root'
   else
     fail "Unsupported database type #{@db_type}"
@@ -95,25 +93,49 @@ def create_db(db_name, db_prov, connection_info, db_type)
   end
 end
 
-def create_db_user(user_resource, user, user_prov, connection_info, pass)
-  user_resource "create database user #{user}"  do
-    provider user_prov
-    connection connection_info
-    username user
-    password pass
-    action :create
-  end
+def create_db_user(user, user_prov, connection_info, pass)
+  case @db_type
+  when 'postgresql', 'pgsql'
+    postgresql_database_user "create database user #{user}"  do
+      provider user_prov
+      connection connection_info
+      username user
+      password pass
+      action :create
+    end
+  when 'mysql', 'mariadb', 'percona-cluster', 'galera'
+    mysql_database_user "create database user #{user}"  do
+      provider user_prov
+      connection connection_info
+      username user
+      password pass
+      action :create
+    end
 end
 
-def grant_db_privileges(user_resource, user, user_prov, connection_info, pass, db_name)
-  user_resource "grant database user #{user}" do
-    provider user_prov
-    connection connection_info
-    username user
-    password pass
-    database_name db_name
-    host '%'
-    privileges [:all]
-    action :grant
+def grant_db_privileges(user, user_prov, connection_info, pass, db_name)
+  case @db_type
+  when 'postgresql', 'pgsql'
+    postgresql_database_user "grant database user #{user}" do
+      provider user_prov
+      connection connection_info
+      username user
+      password pass
+      database_name db_name
+      host '%'
+      privileges [:all]
+      action :grant
+    end
+  when 'mysql', 'mariadb', 'percona-cluster', 'galera'
+    mysql_database_user "grant database user #{user}" do
+      provider user_prov
+      connection connection_info
+      username user
+      password pass
+      database_name db_name
+      host '%'
+      privileges [:all]
+      action :grant
+    end
   end
 end
