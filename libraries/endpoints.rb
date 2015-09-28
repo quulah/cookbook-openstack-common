@@ -52,26 +52,23 @@ module ::Openstack
   end
 
   # Shortcut to get the SQLAlchemy DB URI for a named service
-  def db_uri(service, user, pass) # rubocop:disable MethodLength, CyclomaticComplexity
+  def db_uri(service, user, pass, is_slave = false) # rubocop:disable MethodLength, CyclomaticComplexity
     info = db(service)
     return unless info
-    host = info['host']
-    port = info['port'].to_s
+
+    if is_slave
+      host  = info['slave_host']
+      port = info['slave_port'].to_s
+    else
+      host = info['host']
+      port = info['port'].to_s
+    end
     type = info['service_type']
     name = info['db_name']
     options = info['options'][type]
 
     # Normalize to the SQLAlchemy standard db type identifier
     case type
-    when 'db2'
-      # NoSQL is used for telemetry in the DB2 case
-      if service == 'telemetry' && node['openstack']['db']['telemetry']['nosql']['used']
-        options = info['options']['nosql']
-        port = info['nosql']['port']
-        type = 'db2'
-      else
-        type = 'ibm_db_sa'
-      end
     when 'pgsql'
       type = 'postgresql'
     when 'mariadb', 'galera', 'percona-cluster'
@@ -80,7 +77,7 @@ module ::Openstack
 
     # Build uri
     case type
-    when 'mysql', 'postgresql', 'db2', 'ibm_db_sa'
+    when 'mysql', 'postgresql'
       "#{type}://#{user}:#{pass}@#{host}:#{port}/#{name}#{options}"
     when 'sqlite'
       # SQLite uses filepaths not db name

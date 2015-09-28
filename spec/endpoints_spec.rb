@@ -353,37 +353,6 @@ describe 'openstack-common::set_endpoints_by_interface' do
         ).to eq(expected)
       end
 
-      it 'returns block-storage db info hash when service found for db2 with options' do
-        node.set['openstack']['db']['service_type'] = 'db2'
-        node.set['openstack']['db']['options'] = { 'db2' => '?options' }
-        allow(subject).to receive(:node).and_return(chef_run.node)
-        expected = 'ibm_db_sa://user:pass@127.0.0.1:3306/cinder?options'
-        expect(
-          subject.db_uri('block-storage', 'user', 'pass')
-        ).to eq(expected)
-      end
-
-      it 'returns telemetry db info hash when service found for db2' do
-        node.set['openstack']['db']['service_type'] = 'db2'
-        node.set['openstack']['db']['telemetry']['nosql']['used'] = true
-        allow(subject).to receive(:node).and_return(chef_run.node)
-        expected = 'db2://user:pass@127.0.0.1:27017/ceilometer'
-        expect(
-          subject.db_uri('telemetry', 'user', 'pass')
-        ).to eq(expected)
-      end
-
-      it 'returns telemetry db info hash when service found for db2 with options' do
-        node.set['openstack']['db']['service_type'] = 'db2'
-        node.set['openstack']['db']['options'] = { 'nosql' => '?options' }
-        node.set['openstack']['db']['telemetry']['nosql']['used'] = true
-        allow(subject).to receive(:node).and_return(chef_run.node)
-        expected = 'db2://user:pass@127.0.0.1:27017/ceilometer?options'
-        expect(
-          subject.db_uri('telemetry', 'user', 'pass')
-        ).to eq(expected)
-      end
-
       it 'returns compute db info hash when service found for mariadb' do
         node.set['openstack']['db']['service_type'] = 'mariadb'
         allow(subject).to receive(:node).and_return(chef_run.node)
@@ -400,6 +369,37 @@ describe 'openstack-common::set_endpoints_by_interface' do
           expected = 'mysql://user:pass@127.0.0.1:3306/nova?charset=utf8'
           expect(
             subject.db_uri('compute', 'user', 'pass')
+          ).to eq(expected)
+        end
+      end
+
+      it 'returns compute slave db info hash when service found for default mysql' do
+        node.set['openstack']['endpoints']['db']['enabled_slave'] = true
+        allow(subject).to receive(:node).and_return(chef_run.node)
+        expected = 'mysql://user:pass@127.0.0.1:3316/nova?charset=utf8'
+        expect(
+          subject.db_uri('compute', 'user', 'pass', true)
+        ).to eq(expected)
+      end
+
+      it 'returns image slave db info hash when service found for mariadb' do
+        node.set['openstack']['db']['service_type'] = 'mariadb'
+        node.set['openstack']['endpoints']['db']['enabled_slave'] = true
+        allow(subject).to receive(:node).and_return(chef_run.node)
+        expected = 'mysql://user:pass@127.0.0.1:3316/glance?charset=utf8'
+        expect(
+          subject.db_uri('image', 'user', 'pass', true)
+        ).to eq(expected)
+      end
+
+      %w(galera percona-cluster).each do |db|
+        it "returns network slave db info hash when service found for #{db}" do
+          node.set['openstack']['db']['service_type'] = db
+          node.set['openstack']['endpoints']['db']['enabled_slave'] = true
+          allow(subject).to receive(:node).and_return(chef_run.node)
+          expected = 'mysql://user:pass@127.0.0.1:3316/neutron?charset=utf8'
+          expect(
+            subject.db_uri('network', 'user', 'pass', true)
           ).to eq(expected)
         end
       end
